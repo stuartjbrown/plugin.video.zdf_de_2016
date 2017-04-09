@@ -4,15 +4,16 @@ import re
 
 from de.generia.kodi.plugin.backend.zdf.Teaser import Teaser
 
-from de.generia.kodi.plugin.backend.zdf.SearchResource import SearchResource        
-from de.generia.kodi.plugin.backend.zdf.NavigationResource import NavigationResource        
-from de.generia.kodi.plugin.backend.zdf.RubricResource import RubricResource        
-from de.generia.kodi.plugin.backend.zdf.LiveTvResource import LiveTvResource        
+from de.generia.kodi.plugin.backend.zdf.SearchResource import SearchResource
+from de.generia.kodi.plugin.backend.zdf.NavigationResource import NavigationResource
+from de.generia.kodi.plugin.backend.zdf.RubricResource import RubricResource
+from de.generia.kodi.plugin.backend.zdf.LiveTvResource import LiveTvResource
 from de.generia.kodi.plugin.backend.zdf.ConfigurationResource import ConfigurationResource
 
 from de.generia.kodi.plugin.backend.zdf.api.VideoContentResource import VideoContentResource
 from de.generia.kodi.plugin.backend.zdf.api.StreamInfoResource import StreamInfoResource
-        
+from de.generia.kodi.plugin.frontend.zdf.Constants import Constants
+
 def getUrl(url):
     print "getUrl: " + url
     req = urllib2.Request(url)
@@ -21,7 +22,7 @@ def getUrl(url):
     link = response.read()
     response.close()
     return link
-    
+
 # https://www.zdf.de/suche?q=heute-show&from=&to=&sender=alle+Sender&attrs=
 
 baseUrl = "https://www.zdf.de"
@@ -48,28 +49,34 @@ for teaser in searchPage.teasers:
     print "- " + str(teaser)
 if searchPage.moreUrl is not None:
     print "load-more: " + searchPage.moreUrl
-'''
-'''
+
+
 teaser = searchPage.teasers[1]
 videoContentUrl = 'https://api.zdf.de/content/documents/' + teaser.contentName + '.json?profile=player'
 videoContent = VideoContentResource(videoContentUrl, configuration.apiToken)
 videoContent.parse()
 
 print "Video-Content '" + teaser.contentName + "' -> url: '" + videoContent.url + "'"
-'''
-'''
+
+
 navigationResource = NavigationResource(baseUrl)
 navigationResource.parse()
 for rubric in navigationResource.rubrics:
     print "Rubric: " + str(rubric)
 '''
-'''
+
 liveTvResource = LiveTvResource(baseUrl + '/live-tv')
 liveTvResource.parse()
 for teaser in liveTvResource.teasers:
-    print "Teaser: " + str(teaser)
-'''
-'''
+    #print "Teaser: " + str(teaser) + " content: " + teaser.contentName
+    videoContentUrl = Constants.apiBaseUrl + '/content/documents/' + teaser.contentName + '.json?profile=player'
+    videoContent = VideoContentResource(videoContentUrl, Constants.apiBaseUrl, configuration.apiToken)
+    videoContent.parse()
+    #print "StreamInfoUrl: " + videoContent.streamInfoUrl
+    streamInfo = StreamInfoResource(videoContent.streamInfoUrl, configuration.apiToken)
+    streamInfo.parse()
+    print "Channel: " + str(teaser) + " StreamUrl: " + streamInfo.streamUrl
+
 #rubric = '/krimi'
 #rubric = '/dokumentation/zdf-history'
 #rubric = '/doku-wissen/themenseite-doku-wissen-astronomie-100.html'
@@ -95,8 +102,8 @@ for cluster in rubricResource.clusters:
     print cluster
     for teaser in cluster.teasers:
         print teaser
-'''
-'''
+
+
 html = getUrl(searchUrl)
 
 #teaser = getTag('article', 'b-content-teaser-item')
@@ -108,8 +115,8 @@ while pos != -1:
         print teaser
     else:
         print "invalid teaser"
-'''
-'''
+
+
 #pattern = re.compile('.*<article class="b-content-teaser-item x-column">')
 pattern = re.compile('<article\s*class=[^"]*b-content-teaser-item[^"]*"\s*>', re.DOTALL)
 match = pattern.search(html)
@@ -119,4 +126,3 @@ if match is not None:
     j = html.find('</article>', i) + len('</article>')
     teaser = html[i:j]
     print teaser
-'''
